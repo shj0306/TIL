@@ -6,13 +6,13 @@
 - #### Hard Voting
   - Majority Voting이라고도 하며, 각각의 모델들이 결과를 예측하면 단순히 가장 많은 표를 얻은 결과를 선택하는 방식입니다.
 
-![hard_voting](Ensemble.assets/img.png)
+![img](https://user-images.githubusercontent.com/40904001/165271716-ae592d7f-9ee1-417d-b8e9-935e5d60c533.png)
 
 - #### Soft Voting
   - 다른 말로 Probaility Voting이라고 불립니다. 각 class 별로 모델들이 예측한 확률을 합산해서 가장 높은 class를 선택하는 방식입니다.
 
 
-![soft_voting](Ensemble.assets/soft_voting.png)
+![soft_voting](https://user-images.githubusercontent.com/40904001/165271837-d7a168f5-3fc8-4840-8b7d-3bfb46c39727.png)
 
 
 
@@ -23,7 +23,8 @@
 - 랜덤 포레스트(Random Forest)
   - 랜덤 포레스트는 여러 개의 결정 트리 분류기가 전체 데이터에서 배깅 방식으로 각자의 데이터를 샘플링해 개별적으로 학습을 수행한 뒤 최종적으로 모든 분류기가 voting을 통해 예측 결정을 합니다.  
   
-    ![random_forest](Ensemble.assets/rf.webp)
+   ![rf](https://user-images.githubusercontent.com/40904001/165272135-69208d5a-d37b-4ecb-a66b-31b2891dcec9.jpg)
+
   
 - 랜덤 포레스트 하이퍼 파라미터
   - n_estimators: 결정 트리의 개수 지정. 디폴트는 100
@@ -35,7 +36,8 @@
 
 - 여러 개의 약한 학습기를 순차적으로 학습-예측하면서 데이터에 가중치 부여를 통해 오류를 개선해 나가면서 학습하는 방식
 
-  ![boosting](Ensemble.assets/boosting.jpg)
+  ![boosting](https://user-images.githubusercontent.com/40904001/165272054-d5fb2e7c-ad91-4898-be04-e477b3a49feb.jpg)
+
   
 - XgBoost
   - GBM의 단점인 느린 수행 시간과 과적합 규제 부재 등의 문제를 해결해 각광받고 있는 패키지다.
@@ -68,7 +70,7 @@
 
   - Gradient Boosting 프레임워크로 Tree 기반 학습 알고리즘입니다. 기존의 다른 Tree 기반 알고리즘과 다른점은 Tree구조가 수평적으로 확장하는 다른 Tree기반 알고리즘에 비해 수직적으로 확장을 하는 것에 있습니다.
   
-    ![lgbm](Ensemble.assets/다운로드.png)
+    ![다운로드](https://user-images.githubusercontent.com/40904001/165272257-c756ae85-72dd-4424-8082-94029fb71fe8.png)
     
   - Light GBM의 단점?
     - Light GBM은 leaf-wise growth로 과적합의 우려가 다른 Tree 알고리즘에 비해 높은 편입니다. 그러므로 데이터의 양이 적을 경우 과적합에 취약한 면이 있어 데이터 양이 적을 경우 사용하지 않는 것이 좋습니다.
