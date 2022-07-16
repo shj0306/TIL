@@ -20,6 +20,8 @@
    - 분산 framework에서 동작 가능
 
      ```python
+     from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+     
      def objective_func(search_space):
          x = search_space['x']
          y = search_space['y']
@@ -30,11 +32,3 @@
      
      best = fmin(fn=objective_func, space=search_space, algo=algo, max_evals=5, trials=trials)
      ```
-
-2. Bayesian optimization
-
-   - 
-
-3. Optuna
-
-   - 
