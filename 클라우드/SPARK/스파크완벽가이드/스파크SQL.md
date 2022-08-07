@@ -177,4 +177,230 @@ dest_country_name=__HIVE_DEFAULT_PARTITION__
 ### 테이블 메타데이터 갱신하기
 
 - 테이블 메타데이터를 유지하는 것은 가장 최신의 데이터셋을 읽고 있다는 것을 보장할 수 있는 중요한 작업입니다.
-- 테이블 메타데이터
+
+- 테이블 메타데이터를 갱신할 수 있는 2가지 명령이 있습니다.
+
+  ```sql
+  refresh table partitioned_flights
+  ```
+  
+  - 테이블과 관련된 모든 캐싱된 항목을 갱신합니다.
+  
+  - 테이블이 이미 캐싱되어 있다면 다음번 스캔이 동작하는 시점에 다시 캐싱합니다.
+  
+  ```sql
+  msck repair table partitioned_flights
+  ```
+  
+  - 카탈로그에서 관리하는 테이블의 파티션 정보를 새로 고치는 명령어입니다.
+  - 새로운 파티션 정보를 수집하는 데 초점을 맞춥니다.
+
+### 테이블 제거하기
+
+- 테이블은 삭제(delete)할 수 없고 제거(drop)만 가능합니다. drop 키워드를 사용해 테이블을 제거 할 수 있습니다.
+- 존재하지 않는 테이블을 제거하려고 하면 오류가 발생합니다. 테이블이 존재하는 경우만 제거하려면 DROP TABLE IF EXISTS 구문을 사용해야 합니다.
+
+### 테이블 캐싱하기
+
+- 데이터프레임에서처럼 테이블을 캐시하거나 캐시에서 제거할 수 있습니다.
+
+  ```sql
+  (UN)CACHE TABLE flights
+  ```
+
+
+
+## 뷰
+
+### 뷰 생성하기
+
+- 신규 경로에 모든 데이터를 다시 저장하는 대신 단순하게 쿼리 시점에 데이터 소스에 트랜스포메이션을 수행합니다. filter, select, Group By, Rollup
+
+- 테이블처럼 데이터베이스에 등록하지 않고 현재 세션에만 사용할 수 있는 임시 뷰도 생성할 수 있다.
+
+- 데이터베이스 상관없이 사용할 수 있는 전역적 임시 뷰도 만들 수 있습니다. 세션이 종료되면 사라집니다.
+
+  ```sql
+  create (global) (temp) view just_usa_view as
+  select * from flights where dest_country_name = 'United States'
+  ```
+
+- 스파크 데이터프레임과 스파크 SQL로 생성된 쿼리 실행 계획을 비교할 수 있습니다.
+
+  ```scala
+  val just_usa_df = flights.where("dest_country_name = 'United States'")
+  just_usa_df.selectExpr("*").explain
+  ```
+
+  ```sql
+  explain select * from just_usa_view
+  ```
+
+
+
+### 뷰 제거하기
+
+- 테이블을 제거하는 것과 동일한 방식으로 제거할 수 있습니다.
+- 뷰와 테이블 제거의 핵심 차이점은 뷰는 어떤 데이터도 제거되지 않으며 뷰 정의만 제거됩니다.
+
+
+
+## 데이터베이스
+
+- 전체 데이터베이스 목록 확인
+
+  ```sql
+  show databases
+  ```
+
+- 데이터베이스 생성하기
+
+  ```sql
+  create database some_db
+  ```
+
+- 데이터베이스 설정하기
+
+  ```sql
+  use some_db
+  ```
+
+- 현재 사용 중인 데이터베이스 확인
+
+  ```sql
+  select current_database()
+  ```
+
+- 데이터 베이스 제거하기
+
+  ```sql
+  drop database if exists some_db
+  ```
+
+### SELECT 구문
+
+#### case...when...then 구문
+
+- SQL 쿼리 값을 조건에 맞게 변경해야 할 수도 있습니다. 이 때 사용하는 구문이고, 이 구문은 프로그래밍의 if 구문과 동일한 처리를 합니다.
+
+  ```sql
+  select
+  case when dest_country_name = 'UNITED STATES' then 1
+  	 when dest_country_name = 'Egypt' then 0
+       else -1 end
+  from partitioned_flights
+  ```
+
+### SQL 쿼리
+
+### 1. 복합 데이터 타입
+
+- 복합 데이터 타입은 표준 SQL과는 거리가 있고 표준 SQL에 존재하지 않는 강력한 기능입니다.
+
+- 스파크 SQL에는 구조체, 리스트, 맵 세가지 핵심 복합 데이터 타입이 존재합니다.
+
+  ### 구조체
+
+  - 구조체는 맵에 더 가까우며 스파크에서 중첩 데이터를 생성하거나 쿼리하는 방법을 제공합니다. 구조체는 여러 컬럼이나 표현식을 괄호로 묶기만 하면 됩니다.
+
+    ```sql
+    create view if not exists nested_data as
+    select (dest_country_name, origin_country_name) as country, count from flights
+    ```
+
+  - 구조체 데이터 조회
+
+    ```sql
+    select * from nested_data
+    ```
+
+  - 구조체 개별 컬럼 조회
+
+    ```sql
+    select country.dest_country_name, count from nested_data
+    ```
+
+  ### 리스트
+
+  - 값의 리스트를 만드는 collect_list 함수나 중복 값이 없는 배열을 만드는 collect_set 함수를 사용할 수 있습니다. 두 함수 모두 집계 함수기 때문에 집계 연산 시에만 사용할 수 있습니다.
+
+  - 파이썬 방식과 유사한 배열 쿼리 구문을 사용해 리스트의 특정 위치의 데이터를 쿼리할 수 있습니다.
+
+    ```sql
+    select dest_country_name as new_name, collect_list(count)([idx]) as flight_counts, collect_set(origin_country_name) as origin_set from flights group by dest_country_name
+    ```
+
+  - explode 함수를 사용해 배열을 다시 여러 개의 로우로 변환할 수 있습니다.
+
+    ```sql
+    select explode(collected_counts), dest_country_name from flights_agg
+    ```
+
+### 2. 함수
+
+- 스파크 SQL은 다양한 고급 함수를 제공합니다. 전체 함수 목록을 확인하려면 show functions 구문을 사용합니다.
+
+- 스파크에 내장된 시스템 함수나 사용자 함수 중 어떤 유형의 함수 목록을 보고 싶은 지 지정할 수 있습니다.
+
+  ```sql
+  SHOW SYSTEM(USER) FUCTIONS
+  ```
+
+- 개별 함수 설명과 사용법을 보고 싶으면 describe 키워드를 사용합니다.
+
+  ```sql
+  describe function function_name
+  ```
+
+- 사용자 정의 함수를 정의하고, 분산 환경에서 사용할 수 있는 기능을 제공합니다.
+
+  ```scala
+  def power3(number:Double):Double = number * number * number
+  spark.udf.register("power3", power3(_:Double):Double)
+  
+  //sql 구문
+  select count, power3(count) from flights
+  ```
+
+### 3. 서브 쿼리
+
+- 서브 쿼리를 사용하면 쿼리 안에 쿼리를 지정할 수 있습니다.
+- 스파크에는 두 가지 기본 서브쿼리가 있습니다.
+  - 상호 연관 서브 쿼리 : 서브쿼리의 정보를 보완하기 위해 쿼리의 외부 범위에 있는 일부 정보를 사용할 수 있습니다.
+  - 비상호 연관 서브 쿼리 : 외부 범위에 있는 정보를 사용하지 않습니다.
+- 스파크는 값에 따라 필터링할 수 있는 조건절 서브 쿼리도 지원합니다.
+
+### 비상호연관 조건절 서브 쿼리
+
+- 예제) 데이터 중 상위 5개의 목적지 국가 정보를 조회합니다.
+
+  ```sql
+  select dest_country_name from flights
+  group by dest_country_name order by sum(count) desc limit 5
+  ```
+
+- 이전 예제의 결과에 출발지 국가 정보가 존재하는 지 확인할 수 있습니다.
+
+  ```sql
+  select * from flights
+  where origin_country_name in (select dest_country_name from flights group by dest_country_name order by sum(count) desc limit 5)
+  ```
+
+### 상호연관 조건절 서브 쿼리
+
+- 내부 쿼리에서 외부 범위에 있는 정보를 사용할 수 있습니다.
+
+- 예제) 목적지 국가에서 되돌아 올 수 있는 항공편이 있는 지
+
+  ```sql
+  select * from flights f1
+  where exists (select 1 from flights f2
+               where f1.dest_country_name = f2.origin_country_name)
+  and exists (select 1 from flights f2
+             where f2.dest_country_name = f1.origin_country_name)
+  ```
+
+  EXISTS 키워드는 서브쿼리에 값이 존재하면 true를 반환합니다. 앞에 NOT 연산자를 붙여 결과를 뒤집을 수 있습니다.
+
+
+
