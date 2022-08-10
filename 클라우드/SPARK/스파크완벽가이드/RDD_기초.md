@@ -1,4 +1,4 @@
-# RDD
+# RDD 기초
 
 비즈니스나 기술적 문제를 고수준 API를 사용해 모두 처리할 수 있는 것은 아닙니다. 이런 경우의 스파크의 저수준 API를 사용해야 할 수도 있습니다.
 
@@ -318,7 +318,125 @@ words.saveAsTextFile("file://tmp/bookTitle", classOf[Bzip2Codec])
 
 RDD 캐싱에도 데이터프레임이나 데이터셋의 캐싱과 동일한 원칙이 적용됩니다.
 
+저장소 수준은 싱글톤 객체인 org.apache.spark.storage.StorageLevel의 속성 중 하나로 지정할 수 있습니다.
 
+저장소 수준을 지정하고 나면 다음 예제와 같이 저장소 수준을 조회할 수 있습니다.
+
+```scala
+words.getStorageLevel
+```
+
+## 체크포인팅
+
+- 데이터프레임 API에서 사용할 수 없는 기능 중 하나인 체크포인팅 개념입니다. 체크포인팅은 RDD를 디스크에 저장하는 방식입니다. 나중에 저장된 RDD를 참조할 때는 원본 데이터소스를 다시 계산해 RDD를 생성하지 않고 디스크에 저장된 중간 결과 파티션을 참조합니다.
+
+- 이 기능은 반복적인 연산 수행시 매우 유용합니다.
+
+  ```scala
+  spark.sparkContext.setCheckpointDir("/FileStore/tables/checkpoint")
+  words.checkpoint()
+  ```
+
+  이제 words RDD를 참조하면 데이터소스의 데이터 대신 체크포인트에 저장된 RDD를 사용합니다.
+
+## RDD를 시스템 명령으로 전송하기
+
+pipe 메서드를 사용하면 파이핑 요소로 생성된 RDD를 외부 프로세스로 전달할 수 있습니다. 이 때 외부 프로세스는 파티션마다 한 번씩 처리해 결과 RDD를 생성합니다. 각 입력 파티션의 모든 요소는 개행 문자 단위로 분할 되어 여러 줄의 입력 데이터로 변경된 후 프로세스의 표준 입력에 전달됩니다. 결과 파티션은 표준 출력으로 생성됩니다. 
+
+사용자가 정의한 두 함수를 인수로 전달하면 출력 방식을 원하는 대로 변경할 수 있습니다.
+
+- 예제) 각 파티션을 wc 명령에 연결,  각 로우는 신규 로우로 전달되므로 로우 수를 세면 각 파티션별 로우 수를 얻을 수 있습니다.
+
+  ```scala
+  words.pipe("wc -l").collect()
+  //Array[String] = Array(5, 5)
+  ```
+
+### 1. mapPartitions
+
+- mapPartitions는 개별 파티션(이터레이터로 표현)에 대해 map 연산을 수행할 수 있습니다. 그 이유는 클러스터에서 물리적인 단위로 개별 파티션을 처리하기 때문입니다. (로우 단위로 처리하지 않는다.)
+
+- 예제) 데이터의 모든 파티션에 1값을 생성하고 표현식에 따라 수를 세어 합산
+
+  ```scala
+  words.mapPartitions(part => Iterator[Int](1)).sum() // 2
+  ```
+
+  ```python
+  words.mapPartitions(lambda part : [1]).sum() // 2
+  ```
+
+  기본적으로 파티션 단위로 작업을 수행합니다. 따라서 전체 파티션에 대한 연산을 수행할 수 있습니다. RDD의 전체 하위 데이터셋에 원하는 연산을 수행할 수 있기 때문에 아주 유용한 기능입니다. 
+
+  파티션 그룹의 전체 값을 단일 파티션으로 모든 다음 임의의 함수를 적용하고 제어할 수 있습니다.  사용자가 정의한 머신러닝 알고리즘으로 파티션을 연결하고 일부 기업 데이터를 이용해 개별 모델을 학습하는 상황이 그 예입니다.
+
+- mapPartitionsWithIndex 같이 유사한 기능을 제공하는 함수가 있습니다. 해당 함수를 사용하려면 인덱스와 파티션의 모든 아이템을 순회하는 이터레이터를 가진 함수를 인수로 지정해야 합니다. 파티션 인덱스는 RDD의 파티션 번호입니다. 파티션 인덱스를 사용해 각 레코드가 속한 데이터셋이 어디에 있는 지 알 수 있습니다. 그리고 이 정보를 디버깅에 활용할 수 있습니다. 또한 이 기능을 이용해 map 함수가 정상적으로 동작하는 지 시험할 수 있습니다.
+
+  ```scala
+  def indexedFunc(partitionIndex : Int, withinPartIterator : Iterator[String]) = {
+    withinPartIterator.toList.map(
+      value => s"Partition: $partitionIndex => $value").iterator
+  }
+  
+  words.mapPartitionsWithIndex(indexedFunc).collect()
+  ```
+
+  ```python
+  def indexedFunc(partitionIndex, withinPartIterator):
+      return ["partition: {} => {}".format(partitionIndex, x) for x in withinPartIterator]
+  
+  words.mapPartitionsWithIndex(indexedFunc).collect()
+  '''
+  Out[11]: ['partition: 0 => Spark',
+   'partition: 0 => the',
+   'partition: 0 => definitive',
+   'partition: 0 => Guide',
+   'partition: 0 => :',
+   'partition: 1 => Big',
+   'partition: 1 => Data',
+   'partition: 1 => Processing',
+   'partition: 1 => Made',
+   'partition: 1 => Simple']
+   '''
+  ```
+
+### 2. foreachPartition
+
+- mapPartitions 함수와 달리 foreachPartition 함수는 파티션의 모든 데이터를 순회할 뿐 결과는 반환하지 않습니다. 즉 반환값의 존재 여부가 두 함수의 차이점입니다.
+
+- 각 파티션의 데이터를 데이터베이스에 저장하는 것과 같이 개별 파티션에서 특정 작업을 수행하는 데 매우 적합한 함수입니다. 실제로 많은 데이터소스 커넥터에서 이 함수를 사용하고 있습니다.
+
+- 예제) 임의로 생성한 id를 이용해 임시 디렉터리에 결과를 저장하는 텍스트 파일 소스 구현
+
+  ```scala
+  words.foreachPartition { iter =>
+    import java.io._
+    import scala.util.Random
+    val randomFileName = new Random().nextInt()
+    val pw = new PrintWriter(new File(s"/tmp/random-file-${randomFileName}.txt"))
+    while (iter.hasNext) {
+        pw.write(iter.next())
+    }
+    pw.close()
+  }
+  ```
+
+### 3. glom
+
+- 데이터셋의 모든 파티션을 배열로 변환하는 함수입니다.
+
+- 이 기능은 데이터를 드라이버로 모으고 데이터가 존재하는 파티션의 배열이 필요한 경우에 매우 유용합니다.
+
+- 파티션이 크거나 수가 많으면 드라이버가 비정상적으로 종료될 수 있습니다.
+
+- 예제) 입력된 단어를 두 개의 파티션에 개별적으로 할당
+
+  ```scala
+  spark.sparkContext.parallelize(Seq("Hello", "World"), 2).glom().collect()
+  // Array(Array(Hello), Array(World))
+  ```
+
+  
 
 
 
