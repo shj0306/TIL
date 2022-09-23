@@ -4,11 +4,11 @@
 
 ## 1. 엔티티를 직접 노출
 
-![image](https://user-images.githubusercontent.com/40904001/190367545-8d3127ac-0f49-4b1c-9a3d-57b058260cc0.png)
+![image](https://user-images.githubusercontent.com/40904001/191947660-b6e60de9-2373-44f6-b128-815e2471dd28.png)
 
 **[결과]**
 
-![image](https://user-images.githubusercontent.com/40904001/190368116-f42c12cc-51be-45dc-b0fd-5ef1c803f2ff.png)
+![image](https://user-images.githubusercontent.com/40904001/191947673-c7a519c6-5675-4091-9983-64fb2b420e03.png)
 
 원인 : Order와 Member가 양방향 관계로 설정되어 있기 때문에 무한루프 발생 -> StackOverflow
 
@@ -16,7 +16,7 @@
 
 **[또 다른 문제]**
 
-![image](https://user-images.githubusercontent.com/40904001/190369000-898afe81-5ca6-4dec-b0e5-cf7aabf002d1.png)
+![image](https://user-images.githubusercontent.com/40904001/191947695-b8169309-c19f-46f9-ae23-9b1ff8dc8a49.png)
 
 원인 : Order -> Member와 Order -> Address는 지연 로딩이기 때문에 실제 엔티티 대신 프록시가 생성된다. 그런데 Jackson 라이브러리는 이 프록시 객체를 Json으로 어떻게 생성해야 하는 지 모르기 때문에 예외 발생
 
@@ -30,7 +30,7 @@
 
 ## 2. 엔티티를 DTO로 변환
 
-![image](https://user-images.githubusercontent.com/40904001/190386933-98c159c9-a06c-43dd-a0c6-15007daafbe1.png)
+![image](https://user-images.githubusercontent.com/40904001/191947707-b255da98-9176-4c9f-9622-6c15280783d7.png)
 
 **[결과]**
 
@@ -44,23 +44,23 @@
 
 ## 3. 엔티티를 DTO로 변환 + 페치 조인 최적화
 
-![image](https://user-images.githubusercontent.com/40904001/190387942-35e94431-1ebf-4d6a-abcc-dcf417b4317e.png)
+![image](https://user-images.githubusercontent.com/40904001/191947727-357248c5-97c5-448e-82bc-eed26a8869f2.png)
 
 **[결과]**
 
 엔티티를 페치 조인을 사용해서 쿼리 1번에 조회
 
-![image-20220915200452011](API개발 고급.assets/image-20220915200452011.png)
+![image](https://user-images.githubusercontent.com/40904001/191947744-f1f9a83e-47df-4354-a025-1b63ecd477d9.png)
 
 
 
 ## 4. 엔티티를 DTO로 변환 + DTO 바로 조회
 
-![image-20220915202758579](API개발 고급.assets/image-20220915202758579.png)
+![image](https://user-images.githubusercontent.com/40904001/191947771-378596f0-46e3-45bf-80f5-1428787474e4.png)
 
 **[결과]**
 
-![image](https://user-images.githubusercontent.com/40904001/190392248-18d11781-74c1-46ce-8229-504089c97814.png)
+![image](https://user-images.githubusercontent.com/40904001/191947792-cae047fc-5bd9-4154-8e20-4fe0b47c5684.png)
 
 
 

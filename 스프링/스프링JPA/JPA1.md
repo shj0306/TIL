@@ -4,7 +4,7 @@
 
 ## JPA 구동 방식
 
-![image-20220824164540559](JPA1.assets/image-20220824164540559.png)
+![image](https://user-images.githubusercontent.com/40904001/191945065-0c7631e8-a54f-46d9-9af6-4fcab70168cd.png)
 
 
 

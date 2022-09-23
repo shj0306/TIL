@@ -2,7 +2,7 @@
 
 ## OSIV : ON
 
-![image](https://user-images.githubusercontent.com/40904001/190613584-df9ffc39-0740-4d80-9a60-f55a63637df8.png)
+![image](https://user-images.githubusercontent.com/40904001/191947850-54c1e2f7-c7d5-4f40-ab98-a1dc5ec507e2.png)
 
 특징
 
@@ -17,7 +17,7 @@
 
 ## OSIV : OFF
 
-![image](https://user-images.githubusercontent.com/40904001/190614128-78085350-9867-4714-bfdf-aa8a4d4bb8fe.png)
+![image](https://user-images.githubusercontent.com/40904001/191947874-902a2baa-ae2e-4664-9612-a95c9eee6cab.png)
 
 - 모든 지연로딩을 트랜잭션 안에서 처리해야 한다.
 

@@ -15,7 +15,7 @@
 
 공통 관심 사항과 핵심 관심 사항을 분리
 
-![image-20220822191202623](AOP.assets/image-20220822191202623.png)
+![image](https://user-images.githubusercontent.com/40904001/191946322-b34b91d5-34df-4164-a4ba-29bfad58c37a.png)
 
 ### 해결
 
@@ -26,15 +26,11 @@
 
 ### AOP 적용 전 의존 관계
 
-![image-20220822192439515](AOP.assets/image-20220822192439515.png)
+![image](https://user-images.githubusercontent.com/40904001/191946348-dc5f28ea-6d72-410c-9f50-d6ba59c5889f.png)
 
 ### AOP 적용 후 의존 관계
 
-![image-20220822192453245](AOP.assets/image-20220822192453245.png)
-
-
-
-
+![image](https://user-images.githubusercontent.com/40904001/191946368-3bd2ad49-06e2-4a45-9932-13e65c57fd33.png)
 
 
 
